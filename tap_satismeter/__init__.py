@@ -7,6 +7,7 @@ from typing import List
 import arrow
 import requests
 from requests.auth import HTTPBasicAuth
+
 from singer import (get_logger, metadata, utils, write_record, write_schema,
                     write_state)
 from singer.catalog import Catalog
@@ -111,9 +112,17 @@ def output_responses(stream_id, config: dict, state: dict) -> dict:
             "endDate": end_datetime.isoformat(),
         }
 
+        if config.get('auth_method', 'basic') == 'bearer':
+            auth = None
+            extra_headers = {"Authorization": f"Bearer {config['api_key']}"}
+        else:
+            auth = HTTPBasicAuth(config["api_key"], None)
+            extra_headers = None
+
         res_json = request(
             '/responses/', params=params,
-            auth=HTTPBasicAuth(config["api_key"], None),
+            auth=auth,
+            extra_headers=extra_headers,
             user_agent=config.get('user_agent', None)
         ).json()
 
